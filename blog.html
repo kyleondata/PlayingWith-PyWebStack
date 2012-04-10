@@ -6,50 +6,66 @@
 			}
 		</style>
 		
-		<script src='jquery-1.7.2.min.js' ></script>
+		<script src='jquery-1.7.2.min.js'></script>
+        <script src='knockout-2.0.0.js'></script>
 		<script>
+            // Store the model globally
+            var model;
+
+            // Handle the DOM Ready (Finished Rendering the DOM)
 			$(document).ready(function(){
+                // Bind a function to the keypress event for the post
+                // text box
 				$('#post').bind('keypress', function(e) {
 					if (e.which == 13){
+                        // On key press = 'enter' key
+                        // Send the request
 						send();
 					}
 				});
-				document.domain = 'localhost';
+
+                // Get the post from the API
 				getPosts();
 			});
 			
 			function getPosts()
 			{
+                // Call the API and get the posts from MongoDB
 				$.ajax({
 					url: "http://localhost:8080/blog",
 					dataType: 'json'
 				}).done(function(data){
-					
-					for(i=0; i < data.length; i++)
-					{
-						$('#results').append('<li class="post">' + data[i].message + '</li>');
-					}
-						
+                    // Create an observable array.
+                    // This means that knockout will automatically update
+                    // UI elements that have items bound to it
+                    model = ko.observableArray(data);
+                    // Apply the Bindings that are set up by Knockout
+                    ko.applyBindings(model);
  				}).error(function(jqXHR, textStatus){
+                    // Just show the error status
  					alert(jqXHR.status)
  				});
 			}
 
 			function send()
 			{
-				var post = $('#post').val()
-				
+                // Get the value from the text box
+				var post = $('#post').val();
+				// Only commit if there is an actual value
 				if (post != '')
 				{
-					var json = {message : post}
+                    // stub out the message
+					var json = {message : post};
+                    // Commit the post via Ajax Call
 					$.ajax({
 						url: "http://localhost:8080/blog",
 						type: "POST",
 						data: JSON.stringify(json)
 					})
-					var html = '<li class="post">' + post + '</li>';
-					$(html).hide().appendTo("#results").fadeIn(1000);
-					
+                    // Update the KO model which will automatically
+                    // Update the list
+                    model.push(json);
+                    // Clear out the textbox
 					$('#post').val('')
 				}
 			}
@@ -60,7 +76,9 @@
 		<input type='button' id='send' value='Send' onClick='send();'/>
 		<br><br>
 		
-		<div id='results'></div>
+		<ul class='post' data-bind="foreach: $data">
+            <li data-bind="text: $data.message"></li>
+		</ul>
 	</body>
 	
 </html>
